@@ -1,79 +1,87 @@
 pipeline {
     agent any
+
     stages {
-        stage('Setup') {
-            steps {                
+        stage('Environment Setup') {
+            steps {
                 script {
                     bat '''
                     python -m pip install --upgrade pip
                     pip install -r requirements.txt
                     '''
-                }                                         
-            }
-            post{
-                always{
-                // Notificar que el estado es "Pending"
-                step([$class: 'GitHubCommitStatusSetter',
-                      contextSource: [$class: 'ManuallyEnteredCommitContextSource', context: 'Setup'],
-                      statusResultSource: [$class: 'ConditionalStatusResultSource', results: [
-                          [$class: 'AnyBuildResult', state: 'SUCCESS', message: 'Setup finish.'],
-                          [$class: 'AnyBuildResult', state: 'FAILURE', message: 'Some setup failed.']
-                      ]]
-                ]) 
                 }
-                
+            }
+            post {
+                always {
+                    // Update GitHub status for setup stage
+                    step([$class: 'GitHubCommitStatusSetter',
+                          contextSource: [$class: 'ManuallyEnteredCommitContextSource', context: 'Environment Setup'],
+                          statusResultSource: [$class: 'ConditionalStatusResultSource', results: [
+                              [$class: 'AnyBuildResult', state: 'SUCCESS', message: 'Environment setup completed successfully.'],
+                              [$class: 'AnyBuildResult', state: 'FAILURE', message: 'Environment setup encountered an issue.']
+                          ]]
+                    ])
+                }
             }
         }
-        stage('Run Selenium Tests') {
+
+        stage('Execute Tests') {
             steps {
-                script{
+                script {
                     bat '''
-                    exit 1
-                    pytest tests/                    
+                    pytest tests/
                     '''
-                }                
+                }
             }
-            post{
+            post {
                 always {
-                    // Notificar éxito o fallo de los tests
+                    // Update GitHub status for test execution
                     step([$class: 'GitHubCommitStatusSetter',
-                          contextSource: [$class: 'ManuallyEnteredCommitContextSource', context: 'Tests'],
+                          contextSource: [$class: 'ManuallyEnteredCommitContextSource', context: 'Test Execution'],
                           statusResultSource: [$class: 'ConditionalStatusResultSource', results: [
-                              [$class: 'AnyBuildResult', state: 'SUCCESS', message: 'Tests passed.'],
-                              [$class: 'AnyBuildResult', state: 'FAILURE', message: 'Some tests failed.']
+                              [$class: 'AnyBuildResult', state: 'SUCCESS', message: 'All tests passed successfully.'],
+                              [$class: 'AnyBuildResult', state: 'FAILURE', message: 'Test execution encountered failures.']
                           ]]
                     ])
                 }
             }
         }
     }
+
     post {
         failure {
+            // Notify GitHub of pipeline failure
             step([$class: 'GitHubCommitStatusSetter',
-                  contextSource: [$class: 'ManuallyEnteredCommitContextSource', context: 'Pipeline'],
+                  contextSource: [$class: 'ManuallyEnteredCommitContextSource', context: 'Pipeline Status'],
                   statusResultSource: [$class: 'ConditionalStatusResultSource', results: [
-                      [$class: 'AnyBuildResult', state: 'FAILURE', message: 'Pipeline failed.']
+                      [$class: 'AnyBuildResult', state: 'FAILURE', message: 'The pipeline did not complete successfully.']
                   ]]
             ])
+            // Send email notification for failed build
             emailext (
-                subject: "Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                subject: "Pipeline Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
                 body: """
-                El build #${env.BUILD_NUMBER} falló.
-                Revisa los detalles en Jenkins: ${env.BUILD_URL}
-                Sebastian Molina
+                The build #${env.BUILD_NUMBER} for the job ${env.JOB_NAME} has failed.
+
+                Check the details here: ${env.BUILD_URL}
+
+                Regards,
+                Jenkins Pipeline
                 """,
-                to: "j.molina@unillanos.edu.co",
+                to: "developer@example.com",
                 recipientProviders: [[$class: 'CulpritsRecipientProvider'], [$class: 'DevelopersRecipientProvider']]
             )
         }
+
         success {
+            // Notify GitHub of pipeline success
             step([$class: 'GitHubCommitStatusSetter',
-                  contextSource: [$class: 'ManuallyEnteredCommitContextSource', context: 'Pipeline'],
+                  contextSource: [$class: 'ManuallyEnteredCommitContextSource', context: 'Pipeline Status'],
                   statusResultSource: [$class: 'ConditionalStatusResultSource', results: [
-                      [$class: 'AnyBuildResult', state: 'SUCCESS', message: 'Pipeline succeeded.']
+                      [$class: 'AnyBuildResult', state: 'SUCCESS', message: 'Pipeline executed successfully.']
                   ]]
             ])
-            echo 'Build succeeded!'
+            echo 'Pipeline completed successfully!'
         }
     }
 }
