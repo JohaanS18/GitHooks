@@ -60,9 +60,9 @@ pipeline {
                 body: """
                 El build #${env.BUILD_NUMBER} falló.
                 Revisa los detalles en Jenkins: ${env.BUILD_URL}
-                NICOLAS ADOLFO CARDENAS PATIÑO
+                Sebastian Molina
                 """,
-                to: "cnicolasadolfo@gmail.com",
+                to: "j.molina@unillanos.edu.co",
                 recipientProviders: [[$class: 'CulpritsRecipientProvider'], [$class: 'DevelopersRecipientProvider']]
             )
         }
