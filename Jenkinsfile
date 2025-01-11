@@ -68,7 +68,7 @@ pipeline {
                 Regards,
                 Jenkins Pipeline
                 """,
-                to: "developer@example.com",
+                to: "j.molina@unillanos.edu.co",
                 recipientProviders: [[$class: 'CulpritsRecipientProvider'], [$class: 'DevelopersRecipientProvider']]
             )
         }
