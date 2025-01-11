@@ -65,8 +65,7 @@ pipeline {
 
                 Check the details here: ${env.BUILD_URL}
 
-                Regards,
-                Jenkins Pipeline
+                Hola
                 """,
                 to: "j.molina@unillanos.edu.co",
                 recipientProviders: [[$class: 'CulpritsRecipientProvider'], [$class: 'DevelopersRecipientProvider']]
